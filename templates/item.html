@@ -1,0 +1,26 @@
+{% include 'top.html' %}
+         <main role="main" class="container">
+            <div class="jumbotron">
+                <div class="row">
+                    <div class="col">
+                        <h1 class="subtitle">{{item.name}}</h1>
+                        {% if item.filename %}
+                            <img src="/static/uploads/{{item.filename}}" />
+                            <a href="{{url_for('deleteItemImage', item_name = item.name)}}">Delete Image</a>
+                        {% endif %}
+                        <p>{{item.description}}</p>
+                        {% if 'username' in session and creator.id == session['user_id'] %}
+                        <a href="{{url_for('editItem', item_name = item.name)}}">Edit</a> |
+                        <a href="{{url_for('deleteItem', item_name = item.name)}}">Delete</a>
+
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end align-items-baseline">
+                    <small class="text-muted">Created by {{creator.name}}.</small>
+                    <img src="{{creator.picture}}" class="thumbnail">
+                </div>
+            </div>
+        </main>
+    </body>
+</html>

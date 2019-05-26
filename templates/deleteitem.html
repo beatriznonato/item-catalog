@@ -1,0 +1,11 @@
+{% include 'top.html' %}
+<main role="main" class="container">
+    <div class="jumbotron">
+        <h1 class="subtitle">Delete Item</h1>
+        <p>Are you sure you want to delete?</p>
+        <form action="{{url_for('deleteItem', item_name=item.name)}}" method="post">
+            <button type="submit" class="btn btn-success float-right mb-2">Delete</button>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        </form>
+    </div>
+</main>

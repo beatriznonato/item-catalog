@@ -1,0 +1,32 @@
+{% include 'top.html' %}
+         <main role="main" class="container">
+            <div class="jumbotron">
+                <div class="row">
+                    <div class="col-3">
+                        <h1 class="subtitle">Categories</h1>
+                        <ul>
+                            {% for c in categories %}
+                                <li><a class="brown" href="{{url_for('showItems', category_name = c.name)}}">{{c.name}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-1">
+                        <div class="horizontal-divider"></div>
+                    </div>
+                    <div class="col-8">
+                        <h1 class="subtitle">Latest Items</h1>
+                        <ul>
+                            {% for i in latest_items %}
+                                <li>
+                                    <img src="" width="220" height="220">
+                                    <a class="list" href="{{url_for('showItem', category_name = i.category.name, item_name = i.name)}}">{{i.name}}</a> <span class="subsection">({{i.category.name}})</span>
+                                    <hr>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </body>
+</html>

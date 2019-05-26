@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link href="/static/main.css" rel="stylesheet">
+    <link rel="shortcut icon" href="/img/icon.jpeg" type="image/x-icon">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="382848109366-4i3pjd0ali9u7787snuogm1a2plll5m9.apps.googleusercontent.com">
+    <!-- <meta name="google-signin-client_id" content="{{client_id}}"> -->
+
+
+</head>
+    <body>
+        <nav class="navbar">
+            <a class="navbar-brand" href="{{url_for('showCatalog')}}"><span class="title">Cryptokitties</span></a>
+            {%if 'username' not in session %}
+            <form class="form-inline">
+                <div class="g-signin2" data-onsuccess="onSignIn"></div>
+                <!-- <a class="btn btn-success my-2 my-sm-0" href="/catalog/login/">
+                    <span class="title">Login</span>
+                </a> -->
+            {% else %}
+                <a class="btn btn-success my-2 my-sm-0" href="{{url_for('gdisconnect')}}">
+                    <span class="title">Logout {{session.username}}</span>
+                </a>
+            </form>
+            {% endif %}
+
+        </nav>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}

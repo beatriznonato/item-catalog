@@ -1,0 +1,32 @@
+{% include 'top.html' %}
+         <main role="main" class="container">
+            <div class="jumbotron">
+                <div class="row">
+                    <div class="col-3">
+                        <h1 class="subtitle">Categories</h1>
+                        <ul>
+                            {% for c in categories %}
+                                <li><a class="list" href="{{url_for('showItems', category_name = c.name)}}">{{c.name}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-1">
+                        <div class="horizontal-divider"></div>
+                    </div>
+                    <div class="col-8">
+                        <h1 class="subtitle">{{category.name}} Items ({{items.count()}} Items)
+                        {% if 'username' in session %}
+                            <a class="float-right" href="{{url_for('newItem', category_name = category.name)}}">Add</a>
+                        {% endif %}
+                        </h1>
+                        <ul>
+                            {% for i in items %}
+                                <li><a class="list" href="{{url_for('showItem', category_name = category.name, item_name = i.name)}}">{{i.name}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </body>
+</html>
