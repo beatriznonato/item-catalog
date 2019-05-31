@@ -21,29 +21,38 @@ causing it to reach an all-time high in number of transactions and slowing it do
 3. To run the virtual machine we will use the terminal [GitBash](https://git-scm.com/downloads)
 
 ## Dependences
-For *Ubuntu*
-#### Install pip for python 2
-1. ``sudo apt update``
-2. ``sudo apt install python-pip``
-3. ``pip --version``
-4. If it worked, the version will be returned.
-
-#### Install Sqlalchemy
-- ``sudo pip install SQLAlchemy``
-
-#### Install Flask
-- ``sudo pip install Flask``
-
-#### Install Bleach
-- ``sudo pip install bleach``
+To install all the dependencies required to run the project:
+- ``pip install -r requirements.txt``
 
 ## How to Run
 1. Inside the Vagrant directory activate the virtual machine with the **vagrant up** command.
 2. After your activation, enter the **vagrant ssh** command to activate your virtual machine.
 3. Load the database with the command:
- - ``python create_db_items.py``
  - ``python db_setup.py``
+ - ``python create_db_items.py``
 4. In GitBash run the ``python project.py`` command to perform the parsing.
-  
+
+## Endpoints to get the JSON.
+`` @app.route('/catalog/JSON/')
+def showCatalogJSON():
+    categories = session.query(Category).all()
+   return jsonify(Categories=[c.serialize for c in categories])``
+   
+
+``@app.route('/catalog/<string:category_name>/items/JSON')
+def showItemsJSON(category_name):
+    category = session.query(Category).filter_by(name=category_name).one()
+    items = session.query(Item).filter_by(category=category)
+    return jsonify(Items=[i.serialize for i in items])``
+    
+
+``@app.route('/catalog/<string:category_name>/<string:item_name>/JSON')
+def showItemJSON(category_name, item_name):
+    category = session.query(Category).filter_by(name=category_name).one()
+    item = session.query(Item).filter_by(name=item_name,
+                                         category=category).one()
+    return jsonify(Item=[item.serialize]) ``
+    
+    
 ### License
 MIT © Beatriz Nonato
