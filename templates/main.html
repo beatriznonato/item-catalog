@@ -16,10 +16,18 @@
                     <div class="col-8">
                         <h1 class="subtitle">Latest Items</h1>
                         <ul>
-                            {% for i in latest_items %}
+                            <!-- {% for i in latest_items %}
                                 <li>
                                     <img src="" width="220" height="220">
                                     <a class="list" href="{{url_for('showItem', category_name = i.category.name, item_name = i.name)}}">{{i.name}}</a> <span class="subsection">({{i.category.name}})</span>
+                                    <hr>
+                                </li>
+                            {% endfor %} -->
+                            {% for i in latest_items %}
+                                <li>
+                                    <img src="{{i.picture}}" width="220" height="220">
+                                    <a class="list" href="{{url_for('showItem', category_name = i.category.name, item_name = i.name)}}">{{i.name}}</a>
+                                    <span class="subsection">({{i.category.name}})</span>
                                     <hr>
                                 </li>
                             {% endfor %}

@@ -24,7 +24,7 @@
                     $.ajax({
                         type: 'POST',
                         url: '/gconnect?state={{STATE}}',
-                        data: id_token,
+                        data: Request,
                         contentType: 'application/octet-stream; charset=utf-8',
                         data: authResult['code'],
                         success: function(result) {

@@ -21,14 +21,13 @@ from flask import (Flask,
 
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
-from db_setup import Base, Category, Item, User
+from db_setup import (Base, Category, Item, User, engine)
 
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 
-from PIL import Image
 
-# ORM database
+Base.metadata.create_all(engine)
 engine = create_engine('sqlite:///catalog.db')
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
@@ -36,11 +35,8 @@ session = DBSession()
 
 app = Flask(__name__)
 
-# Config and constants
-# CLIENT_ID = json.loads(open('client_secrets.json',
-#                             'r').read())['web']['client_id']
-# UPLOAD_FOLDER = 'static/uploads'
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+CLIENT_ID = json.loads(
+    open('client_secrets.json', 'r').read())['web']['client_id']
 
 
 # DECORATORS
@@ -58,22 +54,28 @@ def login_required(f):
 # JSON ENDPOINTS
 @app.route('/catalog/JSON/')
 def showCatalogJSON():
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
     categories = session.query(Category).all()
     return jsonify(Categories=[c.serialize for c in categories])
 
 
 @app.route('/catalog/<string:category_name>/items/JSON')
 def showItemsJSON(category_name):
-    category = session.query(Category).filter_by(name=category_name).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    category = session.query(Category).filter_by(name=category_name).first()
     items = session.query(Item).filter_by(category=category)
     return jsonify(Items=[i.serialize for i in items])
 
 
 @app.route('/catalog/<string:category_name>/<string:item_name>/JSON')
 def showItemJSON(category_name, item_name):
-    category = session.query(Category).filter_by(name=category_name).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    category = session.query(Category).filter_by(name=category_name).first()
     item = session.query(Item).filter_by(name=item_name,
-                                         category=category).one()
+                                         category=category).first()
     return jsonify(Item=[item.serialize])
 
 
@@ -83,6 +85,8 @@ def showItemJSON(category_name, item_name):
 @app.route('/')
 @app.route('/catalog/')
 def showCatalog():
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
     categories = session.query(Category).all()
     latest_items = session.query(Item).order_by(desc(Item.id)).limit(10)
     return render_template('main.html',
@@ -94,8 +98,10 @@ def showCatalog():
 # again and pass it to the category view.
 @app.route('/catalog/<string:category_name>/items/')
 def showItems(category_name):
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
     categories = session.query(Category).all()
-    category = session.query(Category).filter_by(name=category_name).one()
+    category = session.query(Category).filter_by(name=category_name).first()
     items = session.query(Item).filter_by(category=category)
     return render_template('category.html',
                            categories=categories, category=category,
@@ -105,9 +111,11 @@ def showItems(category_name):
 # Fetch item information and creator information and pass it to the item view.
 @app.route('/catalog/<string:category_name>/<string:item_name>/')
 def showItem(category_name, item_name):
-    category = session.query(Category).filter_by(name=category_name).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    category = session.query(Category).filter_by(name=category_name).first()
     item = session.query(Item).filter_by(name=item_name,
-                                         category=category).one()
+                                         category=category).first()
     creator = getUserInfo(item.user_id)
     return render_template('item.html', item=item, creator=creator)
 
@@ -220,7 +228,9 @@ def gdisconnect():
 @app.route('/catalog/<string:category_name>/new/', methods=["GET", "POST"])
 @login_required
 def newItem(category_name):
-    category = session.query(Category).filter_by(name=category_name).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    category = session.query(Category).filter_by(name=category_name).first()
     if(request.method == 'POST'):
         # Sanitize user input
         name = bleach.clean(request.form['name'], tags=[], strip=True)
@@ -240,30 +250,30 @@ def newItem(category_name):
         session.add(item)
         session.commit()
         return(redirect(url_for('showItem',
-                                category_name=item.category.name,
+                                category_name=item.category_name,
                                 item_name=item.name)))
     else:
         return render_template('newitem.html', category=category)
 
 
 @app.route('/catalog/<string:item_name>/edit/', methods=["GET", "POST"])
-#@csrf_protected
+# @csrf_protected
 @login_required
 def editItem(item_name):
     # Update a given item from the db.
-    item = session.query(Item).filter_by(name=item_name).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    item = session.query(Item).filter_by(name=item_name).first()
     if not isUserOwner(item):
         flash("You do not own this item.")
         return redirect(url_for('showCatalog'))
-        
     if(request.method == 'POST'):
         # Sanitize user input
         name = bleach.clean(request.form['name'], tags=[], strip=True)
         description = bleach.clean(request.form['description'],
                                    tags=[], strip=True)
         if not csrf_protect():
-             return "CSRF detected"
-
+            return "CSRF detected"
         # If an image is attached, replace the current image with it.
         if request.files['image']:
             file = request.files['image']
@@ -279,7 +289,7 @@ def editItem(item_name):
         session.add(item)
         session.commit()
         return(redirect(url_for('showItem',
-                                category_name=item.category.name,
+                                category_name=item.category_name,
                                 item_name=item.name)))
     else:
         categories = session.query(Category).all()
@@ -291,7 +301,9 @@ def editItem(item_name):
 @login_required
 def deleteItem(item_name):
     # Delete a given item from the db.
-    item = session.query(Item).filter_by(name=item_name).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    item = session.query(Item).filter_by(name=item_name).first()
     if not isUserOwner(item):
         flash("You do not own this item.")
         return redirect(url_for('showCatalog'))
@@ -303,7 +315,7 @@ def deleteItem(item_name):
         # If an image was attached to this item, delete it from the server.
         if item.filename:
             delete_image(item.filename)
-        category_name = item.category.name
+        category_name = item.category_name
         session.delete(item)
         session.commit()
         return(redirect(url_for('showItems', category_name=category_name)))
@@ -315,7 +327,9 @@ def deleteItem(item_name):
 @login_required
 def deleteItemImage(item_name):
     # Delete a given item from the db.
-    item = session.query(Item).filter_by(name=item_name).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    item = session.query(Item).filter_by(name=item_name).first()
     if not isUserOwner(item):
         flash("You do not own this item.")
         return redirect(url_for('showCatalog'))
@@ -328,13 +342,16 @@ def deleteItemImage(item_name):
         item.filename = None
         session.add(item)
         session.commit()
-        category_name = item.category.name
-        return(redirect(url_for('showItem', category_name=category_name, item_name=item.name)))
+        category_name = item.category_name
+        return(redirect(url_for(
+            'showItem', category_name=category_name, item_name=item.name
+            )))
     else:
         return render_template('deleteitemimage.html', item=item)
 
-
 # HELPER FUNCTIONS
+
+
 def createUser(login_session):
     # Add a new user to the db.
     newUser = User(name=login_session['username'],
@@ -342,26 +359,34 @@ def createUser(login_session):
                    picture=login_session['picture'])
     session.add(newUser)
     session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    user = session.query(User).filter_by(email=login_session['email']).first()
     return user.id
 
 
 def getUserID(email):
     # Exchange the user email for a user id from the db.
     try:
-        user = session.query(User).filter_by(email=email).one()
+        user = session.query(User).filter_by(email=email).first()
         return user.id
     except Exception:
         return None
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
 
 
 def getUserInfo(user_id):
     # Exhange the user id for user info from the db.
-    user = session.query(User).filter_by(id=user_id).one()
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    user = session.query(User).filter_by(id=user_id).first()
     return user
 
 
 def isUserOwner(item):
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
     owner = session.query(Item).filter_by(
                                           user_id=login_session['user_id'],
                                           id=item.id
@@ -417,4 +442,4 @@ if __name__ == '__main__':
     app.jinja_env.globals['csrf_token'] = generate_csrf_token
     # app.jinja_env.globals['client_id'] = CLIENT_ID
     app.debug = True
-    app.run(host='0.0.0.0', port=9000)
+    app.run(host='localhost', port=5000)
