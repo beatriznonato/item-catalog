@@ -28,10 +28,14 @@ from oauth2client.client import FlowExchangeError
 
 
 Base.metadata.create_all(engine)
-engine = create_engine('sqlite:///catalog.db')
+engine = create_engine(
+    'sqlite:///catalog.db',
+    connect_args={'check_same_thread': False}
+)
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+
 
 app = Flask(__name__)
 
@@ -43,6 +47,7 @@ CLIENT_ID = json.loads(
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        print(login_session)
         if 'username' in login_session:
             return f(*args, **kwargs)
         else:
@@ -54,16 +59,12 @@ def login_required(f):
 # JSON ENDPOINTS
 @app.route('/catalog/JSON/')
 def showCatalogJSON():
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     categories = session.query(Category).all()
     return jsonify(Categories=[c.serialize for c in categories])
 
 
 @app.route('/catalog/<string:category_name>/items/JSON')
 def showItemsJSON(category_name):
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     category = session.query(Category).filter_by(name=category_name).first()
     items = session.query(Item).filter_by(category=category)
     return jsonify(Items=[i.serialize for i in items])
@@ -71,8 +72,6 @@ def showItemsJSON(category_name):
 
 @app.route('/catalog/<string:category_name>/<string:item_name>/JSON')
 def showItemJSON(category_name, item_name):
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     category = session.query(Category).filter_by(name=category_name).first()
     item = session.query(Item).filter_by(name=item_name,
                                          category=category).first()
@@ -85,8 +84,6 @@ def showItemJSON(category_name, item_name):
 @app.route('/')
 @app.route('/catalog/')
 def showCatalog():
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     categories = session.query(Category).all()
     latest_items = session.query(Item).order_by(desc(Item.id)).limit(10)
     return render_template('main.html',
@@ -98,8 +95,6 @@ def showCatalog():
 # again and pass it to the category view.
 @app.route('/catalog/<string:category_name>/items/')
 def showItems(category_name):
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     categories = session.query(Category).all()
     category = session.query(Category).filter_by(name=category_name).first()
     items = session.query(Item).filter_by(category=category)
@@ -111,8 +106,6 @@ def showItems(category_name):
 # Fetch item information and creator information and pass it to the item view.
 @app.route('/catalog/<string:category_name>/<string:item_name>/')
 def showItem(category_name, item_name):
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     category = session.query(Category).filter_by(name=category_name).first()
     item = session.query(Item).filter_by(name=item_name,
                                          category=category).first()
@@ -228,25 +221,18 @@ def gdisconnect():
 @app.route('/catalog/<string:category_name>/new/', methods=["GET", "POST"])
 @login_required
 def newItem(category_name):
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     category = session.query(Category).filter_by(name=category_name).first()
     if(request.method == 'POST'):
         # Sanitize user input
         name = bleach.clean(request.form['name'], tags=[], strip=True)
         description = bleach.clean(request.form['description'],
                                    tags=[], strip=True)
+        image = bleach.clean(request.form['image'], tags=[], strip=True)
         # Very rudimentary csrf protection
         if not csrf_protect():
             return "CSRF detected"
-        # If an image is attached, upload it to the server.
-        if request.files['image']:
-            file = request.files['image']
-            image = upload_image(file, name)
-        else:
-            image = None
         item = Item(name=name, description=description, category=category,
-                    user_id=login_session['user_id'], filename=image)
+                    user_id=login_session['user_id'], picture=image)
         session.add(item)
         session.commit()
         return(redirect(url_for('showItem',
@@ -261,8 +247,6 @@ def newItem(category_name):
 @login_required
 def editItem(item_name):
     # Update a given item from the db.
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     item = session.query(Item).filter_by(name=item_name).first()
     if not isUserOwner(item):
         flash("You do not own this item.")
@@ -272,19 +256,15 @@ def editItem(item_name):
         name = bleach.clean(request.form['name'], tags=[], strip=True)
         description = bleach.clean(request.form['description'],
                                    tags=[], strip=True)
+        image = bleach.clean(request.form['image'], tags=[], strip=True)
         if not csrf_protect():
             return "CSRF detected"
         # If an image is attached, replace the current image with it.
-        if request.files['image']:
-            file = request.files['image']
-            if item.filename:
-                delete_image(item.filename)
-            image = upload_image(file, name)
-            item.filename = image
         category = session.query(Category).get(request.form['category'])
         item.name = name
         item.description = description
         item.category = category
+        item.picture = image
 
         session.add(item)
         session.commit()
@@ -301,8 +281,6 @@ def editItem(item_name):
 @login_required
 def deleteItem(item_name):
     # Delete a given item from the db.
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     item = session.query(Item).filter_by(name=item_name).first()
     if not isUserOwner(item):
         flash("You do not own this item.")
@@ -311,10 +289,6 @@ def deleteItem(item_name):
     if(request.method == 'POST'):
         if not csrf_protect():
             return "CSRF detected"
-
-        # If an image was attached to this item, delete it from the server.
-        if item.filename:
-            delete_image(item.filename)
         category_name = item.category_name
         session.delete(item)
         session.commit()
@@ -327,19 +301,15 @@ def deleteItem(item_name):
 @login_required
 def deleteItemImage(item_name):
     # Delete a given item from the db.
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     item = session.query(Item).filter_by(name=item_name).first()
     if not isUserOwner(item):
         flash("You do not own this item.")
         return redirect(url_for('showCatalog'))
 
-    if(request.method == 'POST'):
+    if request.method == 'POST':
         if not csrf_protect():
             return "CSRF detected"
 
-        delete_image(item.filename)
-        item.filename = None
         session.add(item)
         session.commit()
         category_name = item.category_name
@@ -359,8 +329,6 @@ def createUser(login_session):
                    picture=login_session['picture'])
     session.add(newUser)
     session.commit()
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     user = session.query(User).filter_by(email=login_session['email']).first()
     return user.id
 
@@ -372,21 +340,15 @@ def getUserID(email):
         return user.id
     except Exception:
         return None
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
 
 
 def getUserInfo(user_id):
     # Exhange the user id for user info from the db.
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     user = session.query(User).filter_by(id=user_id).first()
     return user
 
 
 def isUserOwner(item):
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
     owner = session.query(Item).filter_by(
                                           user_id=login_session['user_id'],
                                           id=item.id
@@ -413,28 +375,6 @@ def csrf_protect():
         return False
     else:
         return True
-
-
-def upload_image(file, item_name):
-    # Upload an image to server.
-    # Check for file integrity and file type.
-    try:
-        ext = file.filename.split('.')[-1]
-        filename = item_name+"."+ext
-        f = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        img = Image.open(file)
-        img.verify()
-    except IOError, SyntaxError:
-        print "Bad file: %s" % filename
-        return None
-    file.save(f)
-    return filename
-
-
-def delete_image(filename):
-    # Delete image from the server.
-    f = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    os.remove(f)
 
 
 if __name__ == '__main__':

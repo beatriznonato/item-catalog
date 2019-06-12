@@ -146,7 +146,7 @@ session.add(item8)
 session.commit()
 
 item9 = Item(
-    user_id=0,
+    # user_id=0,
     name="Catzy",
     description="""Hi, I'm Catzy. I like a good joke almost as much as a good
     pair of Bermuda shorts, but not nearly as much as fast, reliable exchanges.
