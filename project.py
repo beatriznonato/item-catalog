@@ -109,8 +109,11 @@ def showItem(category_name, item_name):
     category = session.query(Category).filter_by(name=category_name).first()
     item = session.query(Item).filter_by(name=item_name,
                                          category=category).first()
-    creator = getUserInfo(item.user_id)
-    return render_template('item.html', item=item, creator=creator)
+    if item:                                 
+        creator = getUserInfo(item.user_id)
+        return render_template('item.html', item=item, creator=creator)
+    return render_template('item.html', item=item)
+     
 
 
 # Create an anti-forgery state token and pass it to the login view.
@@ -132,7 +135,7 @@ def gconnect():
         return response
     code = request.data
     try:
-        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+        oauth_flow = flow_from_clientsecrets('./client_secrets.json', scope='')
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:

@@ -38,7 +38,7 @@ session.add(category4)
 session.commit()
 
 item1 = Item(
-    user_id=0,
+    user_id=1,
     name="Nana Bluepants",
     description="""En Taro Adun, please refer to me as Nana Bluepants,
     and only that. This one time, at band camp, I was voted "class heart
@@ -51,7 +51,7 @@ session.add(item1)
 session.commit()
 
 item2 = Item(
-    user_id=0,
+    user_id=1,
     name="Katu Vileright",
     description="""Hiya! My name is Katu Vileright. My best friend is a elf
     on the shelf. I think I would have been voted "most likely to end up on
@@ -63,7 +63,7 @@ session.add(item2)
 session.commit()
 
 item3 = Item(
-    user_id=0,
+    user_id=1,
     name="Count Mugpoppins",
     description="""Yo. My real name is unspeakable in the human language,
     so you can call me Count Mugpoppins. If you ever want to try
@@ -76,7 +76,7 @@ session.add(item3)
 session.commit()
 
 item4 = Item(
-    user_id=0,
+    user_id=1,
     name="Pizzazz",
     description="""I'm Pizzazz, and I'm as hot as melting cheese,
     as spicy as Italian sausage, and as well-loved as anchovies.
@@ -90,7 +90,7 @@ session.add(item4)
 session.commit()
 
 item5 = Item(
-    user_id=0,
+    user_id=1,
     name="Miss Purrfect",
     description="""Hello, lover. You know that feeling you get when a
     Kitty is beautiful, not for their outward Cattributes, but for their
@@ -104,7 +104,7 @@ session.add(item5)
 session.commit()
 
 item6 = Item(
-    user_id=0,
+    user_id=1,
     name="Hypurrion",
     description="""Once I might have been a lowly Kitty, but in this
     strange new realm I have become Hypurrion, blessed by the power
@@ -118,7 +118,7 @@ session.add(item6)
 session.commit()
 
 item7 = Item(
-    user_id=0,
+    user_id=1,
     name="NormalCat",
     description="""48 65 6c 6c 6f 20 74 68 65 72 65 2c 20 49 27 6d 20
     47 6c 69 74 63 68 43 61 74 2e 20 53 6f 6d 65 74 68 69 6e 67 20 69 73
@@ -132,7 +132,7 @@ session.add(item7)
 session.commit()
 
 item8 = Item(
-    user_id=0,
+    user_id=1,
     name="Genesis",
     description="""Greetings, human. I am Genesis. The dogs know me as alpha;
     the cats know me as omega. To your kind, I am a riddle wrapped
@@ -146,7 +146,7 @@ session.add(item8)
 session.commit()
 
 item9 = Item(
-    # user_id=0,
+    # user_id=1,
     name="Catzy",
     description="""Hi, I'm Catzy. I like a good joke almost as much as a good
     pair of Bermuda shorts, but not nearly as much as fast, reliable exchanges.
@@ -159,7 +159,7 @@ session.add(item9)
 session.commit()
 
 item10 = Item(
-    user_id=0,
+    user_id=1,
     name="Sparkles",
     description="""Hello, darling, it is I, Sparkles, your fairy catmother.
     Like the invisible paw of fate, I reward pure-hearted Kitty collectors with
@@ -172,7 +172,7 @@ session.add(item10)
 session.commit()
 
 item11 = Item(
-    user_id=0,
+    user_id=1,
     name="Purremy Allaire",
     description="""Hey there, I'm Purremy Allaire. Some cats are focused on
     catnip and stalking prey; I'm more about using open internet protocols
