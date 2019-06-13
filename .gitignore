@@ -1,1 +1,3 @@
 .vscode
+.db_setup.pyc
+.catalog.db
