@@ -39,7 +39,7 @@ class Item(Base):
     name = Column(String(80), nullable=False)
     id = Column(Integer, primary_key=True)
     description = Column(String(250))
-    category_id = Column(Integer, ForeignKey('category.id'))
+    category_name = Column(Integer, ForeignKey('category.id'))
     category = relationship(Category)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
@@ -52,7 +52,7 @@ class Item(Base):
             'name': self.name,
             'description': self.description,
             'id': self.id,
-            'category_id': self.category_id,
+            'category_name': self.category_name,
             'user_id': self.user_id,
             'picture': self.picture
         }
