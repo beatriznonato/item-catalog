@@ -7,34 +7,58 @@
     <link href="/static/main.css" rel="stylesheet">
     <link rel="shortcut icon" href="/static/img/icon.jpeg" type="image/x-icon">
     <script src="https://apis.google.com/js/platform.js" async defer></script>
-    <meta name="google-signin-client_id" content="727968548623-cn57rol75666u2rsu5ll188g683rdvrv.apps.googleusercontent.com">
-    <!-- <meta name="google-signin-client_id" content="{{client_id}}"> -->
-
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <meta name="google-signin-client_id" content="727968548623-lmcngj9248ogp5aflhvku19sgt5a213d.apps.googleusercontent.com">
+    
 </head>
-    <body>
-        <nav class="navbar">
-            <a class="navbar-brand" href="{{url_for('showCatalog')}}"><span class="title">Cryptokitties</span></a>
-            {%if 'username' not in session %}
-            <form class="form-inline">
-                <div class="g-signin2" data-onsuccess="onSignIn"></div>
-                <!-- <a class="btn btn-success my-2 my-sm-0" href="/catalog/login/">
-                    <span class="title">Login</span>
-                </a> -->
+<body>
+    <script>
+        function onSignIn(googleUser) {
+            console.log('teste')
+            console.log('{{STATE}}')
+            var id_token = googleUser.getAuthResponse().id_token;
+            $.ajax({
+                type: 'POST',
+                url: '/gconnect?state={{STATE}}',
+                data: id_token,
+                contentType: 'application/octet-stream; charset=utf-8',
+                success: function(result) {
+                    if(result) {
+                        $('#result').html(result)
+                        setTimeout(function() {
+                            window.location.href = '/catalog';
+                        }, 4000);
+                    } else {
+                        $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+                    }
+                }
+            })
+        }
+        
+    </script>
+    <nav class="navbar">
+        <a class="navbar-brand" href="{{url_for('showCatalog')}}"><span class="title">Cryptokitties</span></a>
+        {%if 'username' not in session %}
+        <form class="form-inline">
+            <div class="g-signin2" data-onsuccess="onSignIn"></div>
+            <!-- <a class="btn btn-success my-2 my-sm-0" href="/catalog/login/">
+                <span class="title">Login</span>
+            </a> -->
             {% else %}
-                <a class="btn btn-success my-2 my-sm-0" href="{{url_for('gdisconnect')}}">
-                    <span class="title">Logout {{session.username}}</span>
-                </a>
-            </form>
-            {% endif %}
-
-        </nav>
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+            <a class="btn btn-success my-2 my-sm-0" href="{{url_for('gdisconnect')}}">
+                <span class="title">Logout {{session.username}}</span>
+            </a>
+        </form>
+        {% endif %}
+        
+    </nav>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-danger" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    

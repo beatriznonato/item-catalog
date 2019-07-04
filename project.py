@@ -23,8 +23,11 @@ from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from db_setup import (Base, Category, Item, User, engine)
 
-from oauth2client.client import flow_from_clientsecrets
-from oauth2client.client import FlowExchangeError
+# from oauth2client.client import flow_from_clientsecrets
+# from oauth2client.client import FlowExchangeError
+
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 
 Base.metadata.create_all(engine)
@@ -84,11 +87,15 @@ def showItemJSON(category_name, item_name):
 @app.route('/')
 @app.route('/catalog/')
 def showCatalog():
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                    for x in xrange(32))
+    login_session['state'] = state
     categories = session.query(Category).all()
     latest_items = session.query(Item).order_by(desc(Item.id)).limit(10)
     return render_template('main.html',
                            categories=categories,
-                           latest_items=latest_items)
+                           latest_items=latest_items,
+                           STATE=state)
 
 
 # Fetch items of a given category as well as the categories for the sidebar
@@ -115,14 +122,13 @@ def showItem(category_name, item_name):
     return render_template('item.html', item=item)
      
 
-
 # Create an anti-forgery state token and pass it to the login view.
 @app.route('/catalog/login/')
 def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
     login_session['state'] = state
-    return render_template('login.html', STATE=state)
+    return render_template('top.html', STATE=state)
 
 
 # Handle oauth requests and set up an outh flow to exchange an access token
@@ -133,49 +139,19 @@ def gconnect():
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    code = request.data
+    token = request.data
     try:
-        oauth_flow = flow_from_clientsecrets('./client_secrets.json', scope='')
-        oauth_flow.redirect_uri = 'postmessage'
-        credentials = oauth_flow.step2_exchange(code)
-    except FlowExchangeError:
-        response = make_response(json.dumps("Failed to upgrade the "
-                                            "authorization code."), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-           % access_token)
-    h = httplib2.Http()
-    result = json.loads(h.request(url, 'GET')[1])
-    if result.get('error') is not None:
-        response = make_response(json.dumps(result.get('error')), 50)
-        response.headers['Content-Type'] = 'application/json'
-    gplus_id = credentials.id_token['sub']
-    if result['user_id'] != gplus_id:
-        response = make_response(
-            json.dumps("Token's user ID does not match the given User ID."),
-            401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    stored_credentials = login_session.get('credentials')
-    stored_gplus_id = login_session.get('gplus_id')
-    if stored_credentials is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps("Current user is already "
-                                            "connected."), 200)
-        response.headers['Content-Type'] = 'application/json'
-
-    login_session['access_token'] = credentials.access_token
-    login_session['gplus_id'] = gplus_id
-
-    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token': credentials.access_token, 'alt': 'json'}
-    answer = requests.get(userinfo_url, params=params)
-    data = json.loads(answer.text)
-
-    login_session['username'] = data['name']
-    login_session['picture'] = data['picture']
-    login_session['email'] = data['email']
+        # Specify the CLIENT_ID of the app that accesses the backend:
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), CLIENT_ID)
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise ValueError('Wrong issuer.')
+        gplus_id = idinfo['sub']
+        login_session['username'] = idinfo['name']
+        login_session['picture'] = idinfo['picture']
+        login_session['email'] = idinfo['email']
+    except ValueError:
+        # Invalid token
+        pass
 
     # Create a new user in the database if it doesn't exist already.
     user_id = getUserID(login_session['email'])
@@ -195,20 +171,20 @@ def gconnect():
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
-        print 'Access Token is None'
+        print ('Access Token is None')
         response = make_response(json.dumps('Current user not connected.'),
                                  401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    print 'In gdisconnect access token is %s', access_token
-    print 'User name is: '
-    print login_session['username']
+    print ('In gdisconnect access token is %s', access_token)
+    print ('User name is: ')
+    print (login_session['username'])
     url = "https://accounts.google.com/o/oauth2/revoke?token=%s" % (
           login_session['access_token'])
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print 'result is '
-    print result
+    print ('result is ')
+    print (result)
     if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
