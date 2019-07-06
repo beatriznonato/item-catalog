@@ -23,9 +23,6 @@ from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from db_setup import (Base, Category, Item, User, engine)
 
-# from oauth2client.client import flow_from_clientsecrets
-# from oauth2client.client import FlowExchangeError
-
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
@@ -116,11 +113,11 @@ def showItem(category_name, item_name):
     category = session.query(Category).filter_by(name=category_name).first()
     item = session.query(Item).filter_by(name=item_name,
                                          category=category).first()
-    if item:                                 
+    if item:
         creator = getUserInfo(item.user_id)
         return render_template('item.html', item=item, creator=creator)
     return render_template('item.html', item=item)
-     
+
 
 # Create an anti-forgery state token and pass it to the login view.
 @app.route('/catalog/login/')
@@ -128,7 +125,7 @@ def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
     login_session['state'] = state
-    return render_template('top.html', STATE=state)
+    return render_template('login.html', STATE=state)
 
 
 # Handle oauth requests and set up an outh flow to exchange an access token
@@ -142,8 +139,11 @@ def gconnect():
     token = request.data
     try:
         # Specify the CLIENT_ID of the app that accesses the backend:
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), CLIENT_ID)
-        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+        idinfo = id_token.verify_oauth2_token(
+            token, requests.Request(),
+            CLIENT_ID)
+        if idinfo['iss'] not in
+        ['accounts.google.com', 'https://accounts.google.com']:
             raise ValueError('Wrong issuer.')
         gplus_id = idinfo['sub']
         login_session['username'] = idinfo['name']
@@ -171,29 +171,17 @@ def gconnect():
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
-        print ('Access Token is None')
         response = make_response(json.dumps('Current user not connected.'),
                                  401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    print ('In gdisconnect access token is %s', access_token)
-    print ('User name is: ')
-    print (login_session['username'])
-    url = "https://accounts.google.com/o/oauth2/revoke?token=%s" % (
-          login_session['access_token'])
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[0]
-    print ('result is ')
-    print (result)
-    if result['status'] == '200':
         del login_session['access_token']
-        del login_session['gplus_id']
         del login_session['username']
         del login_session['email']
         del login_session['picture']
-        return (redirect(url_for('showCatalog')))
-    else:
-        return (redirect(url_for('showCatalog')))
+        response = make_response(json.dumps("Successfully disconnected."), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 # Insert a new item into the db.
