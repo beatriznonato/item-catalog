@@ -142,10 +142,10 @@ def gconnect():
         idinfo = id_token.verify_oauth2_token(
             token, requests.Request(),
             CLIENT_ID)
-        if idinfo['iss'] not in
-        ['accounts.google.com', 'https://accounts.google.com']:
+        if idinfo['iss'] not in ['accounts.google.com','https://accounts.google.com']:
             raise ValueError('Wrong issuer.')
         gplus_id = idinfo['sub']
+        login_session['gplus_id'] = gplus_id
         login_session['username'] = idinfo['name']
         login_session['picture'] = idinfo['picture']
         login_session['email'] = idinfo['email']
@@ -165,23 +165,23 @@ def gconnect():
     return response
 
 
-# Revoke the current access token effectively logging out the user.
 # Clean up the session
 @app.route('/gdisconnect')
 def gdisconnect():
-    access_token = login_session.get('access_token')
-    if access_token is None:
+    email = login_session.get('email')
+    if email is None:
         response = make_response(json.dumps('Current user not connected.'),
                                  401)
         response.headers['Content-Type'] = 'application/json'
         return response
-        del login_session['access_token']
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
-        response = make_response(json.dumps("Successfully disconnected."), 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+    # del login_session['gplus_id']
+    del login_session['username']
+    del login_session['email']
+    del login_session['picture']
+    flash("Successfully disconnected.")
+    response = make_response(json.dumps("Successfully disconnected."), 200)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 # Insert a new item into the db.
@@ -249,6 +249,9 @@ def editItem(item_name):
 def deleteItem(item_name):
     # Delete a given item from the db.
     item = session.query(Item).filter_by(name=item_name).first()
+    if not item: 
+        flash("You do not exist this item.")
+        return redirect(url_for('showCatalog'))
     if not isUserOwner(item):
         flash("You do not own this item.")
         return redirect(url_for('showCatalog'))
@@ -256,6 +259,7 @@ def deleteItem(item_name):
     if(request.method == 'POST'):
         if not csrf_protect():
             return "CSRF detected"
+            
         category_name = item.category_name
         session.delete(item)
         session.commit()
@@ -347,6 +351,5 @@ def csrf_protect():
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.jinja_env.globals['csrf_token'] = generate_csrf_token
-    # app.jinja_env.globals['client_id'] = CLIENT_ID
     app.debug = True
     app.run(host='localhost', port=5000)
