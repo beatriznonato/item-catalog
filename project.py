@@ -110,6 +110,7 @@ def showItems(category_name):
 # Fetch item information and creator information and pass it to the item view.
 @app.route('/catalog/<string:category_name>/<string:item_name>/')
 def showItem(category_name, item_name):
+    print('teste')
     category = session.query(Category).filter_by(name=category_name).first()
     item = session.query(Item).filter_by(name=item_name,
                                          category=category).first()
@@ -203,7 +204,7 @@ def newItem(category_name):
         session.add(item)
         session.commit()
         return(redirect(url_for('showItem',
-                                category_name=item.category_name,
+                                category_name=item.category.name,
                                 item_name=item.name)))
     else:
         return render_template('newitem.html', category=category)
@@ -236,7 +237,7 @@ def editItem(item_name):
         session.add(item)
         session.commit()
         return(redirect(url_for('showItem',
-                                category_name=item.category_name,
+                                category_name=item.category.name,
                                 item_name=item.name)))
     else:
         categories = session.query(Category).all()
@@ -260,7 +261,7 @@ def deleteItem(item_name):
         if not csrf_protect():
             return "CSRF detected"
             
-        category_name = item.category_name
+        category_name = item.category.name
         session.delete(item)
         session.commit()
         return(redirect(url_for('showItems', category_name=category_name)))

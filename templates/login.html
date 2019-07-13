@@ -12,7 +12,11 @@
     
 </head>
 <body>
-    <script>
+
+    {% block scripts %}
+    {% endblock %}
+
+    <script class="content">
         function onSignIn(googleUser) {
             console.log('teste')
             console.log('{{STATE}}')
@@ -84,5 +88,11 @@
     {% endfor %}
     {% endif %}
     {% endwith %}
+
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
 </body>
 </html>    
