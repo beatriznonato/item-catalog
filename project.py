@@ -143,7 +143,7 @@ def gconnect():
         idinfo = id_token.verify_oauth2_token(
             token, requests.Request(),
             CLIENT_ID)
-        if idinfo['iss'] not in ['accounts.google.com','https://accounts.google.com']:
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
             raise ValueError('Wrong issuer.')
         gplus_id = idinfo['sub']
         login_session['gplus_id'] = gplus_id
@@ -250,7 +250,7 @@ def editItem(item_name):
 def deleteItem(item_name):
     # Delete a given item from the db.
     item = session.query(Item).filter_by(name=item_name).first()
-    if not item: 
+    if not item:
         flash("You do not exist this item.")
         return redirect(url_for('showCatalog'))
     if not isUserOwner(item):
@@ -260,7 +260,6 @@ def deleteItem(item_name):
     if(request.method == 'POST'):
         if not csrf_protect():
             return "CSRF detected"
-            
         category_name = item.category.name
         session.delete(item)
         session.commit()
@@ -287,7 +286,7 @@ def deleteItemImage(item_name):
         category_name = item.category_name
         return(redirect(url_for(
             'showItem', category_name=category_name, item_name=item.name
-            )))
+        )))
     else:
         return render_template('deleteitemimage.html', item=item)
 
@@ -322,9 +321,9 @@ def getUserInfo(user_id):
 
 def isUserOwner(item):
     owner = session.query(Item).filter_by(
-                                          user_id=login_session['user_id'],
-                                          id=item.id
-                                          ).first()
+        user_id=login_session['user_id'],
+        id=item.id
+    ).first()
     if owner:
         return True
     return False
