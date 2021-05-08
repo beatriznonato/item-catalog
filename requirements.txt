@@ -9,7 +9,7 @@ Click==7.0
 cryptography==2.1.4
 dnspython==1.16.0
 enum34==1.1.6
-eventlet==0.25.0
+eventlet==0.31.0
 falcon==2.0.0
 Flask==1.0.3
 google-api-python-client==1.7.9
