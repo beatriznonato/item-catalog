@@ -55,4 +55,4 @@ def showItemJSON(category_name, item_name):
     
     
 ### License
-MIT © Beatriz Nonato
+MIT © Beatriz Nonato :woman_technologist:
